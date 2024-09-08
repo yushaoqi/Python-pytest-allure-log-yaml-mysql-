@@ -8,6 +8,7 @@ from typing import Text, Dict, Union, List
 from jsonpath import jsonpath
 from utils.requests_tool.request_control import RequestControl
 from utils.mysql_tool.mysql_control import SetUpMySQL
+from utils.requests_tool.setup_func_control import CustomFunc
 from utils.read_files_tools.regular_control import regular, cache_regular
 from utils.other_tools.jsonpath_date_replace import jsonpath_replace
 from utils.logging_tool.log_control import WARNING
@@ -133,6 +134,40 @@ class DependentCase:
             else:
                 WARNING.logger.warning("检查到数据库开关为关闭状态，请确认配置")
 
+    def _dependent_type_for_func(
+            self,
+            setup_func: List,
+            dependence_case_data: "DependentCaseData",
+            jsonpath_dates: Dict) -> None:
+        """
+        func type, get data from custom function
+        @param setup_func: setup fucntion
+        @param dependence_case_data: dependent data
+        @param jsonpath_dates: dependent case data
+        @return:
+        """
+
+        if setup_func is not None:
+            setup_func = ast.literal_eval(cache_regular(str(setup_func)))
+            func_data = CustomFunc().setup_func_data(func=setup_func)
+            dependent_data = dependence_case_data.dependent_data
+            for i in dependent_data:
+                _jsonpath = i.jsonpath
+                jsonpath_data = self.jsonpath_data(obj=func_data, expr=_jsonpath)
+                _set_value = self.set_cache_value(i)
+                _replace_key = self.replace_key(i)
+                if _set_value is not None:
+                    CacheHandler.update_cache(cache_name=_set_value, value=jsonpath_data[0])
+                    # Cache(_set_value).set_caches(jsonpath_data[0])
+                if _replace_key is not None:
+                    jsonpath_dates[_replace_key] = jsonpath_data[0]
+                    self.url_replace(
+                        replace_key=_replace_key,
+                        jsonpath_dates=jsonpath_dates,
+                        jsonpath_data=jsonpath_data,
+                    )
+           
+
     def dependent_handler(
             self,
             _jsonpath: Text,
@@ -169,6 +204,7 @@ class DependentCase:
         # 获取依赖用例数据
         _dependence_case_dates = self.__yaml_case.dependence_case_data
         _setup_sql = self.__yaml_case.setup_sql
+        _setup_func = self.__yaml_case.setup_func
         # 判断是否有依赖
         if _dependent_type is True:
             # 读取依赖相关的用例数据
@@ -178,11 +214,17 @@ class DependentCase:
                 for dependence_case_data in _dependence_case_dates:
                     _case_id = dependence_case_data.case_id
                     # 判断依赖数据为sql，case_id需要写成self，否则程序中无法获取case_id
-                    if _case_id == 'self':
+                    if _case_id == 'setup_sql':
                         self._dependent_type_for_sql(
                             setup_sql=_setup_sql,
                             dependence_case_data=dependence_case_data,
                             jsonpath_dates=jsonpath_dates)
+                    elif _case_id == 'setup_func':
+                        self._dependent_type_for_func(
+                            setup_func=_setup_func,
+                            dependence_case_data=dependence_case_data,
+                            jsonpath_dates=jsonpath_dates
+                        )
                     else:
                         re_data = regular(str(self.get_cache(_case_id)))
                         re_data = ast.literal_eval(cache_regular(str(re_data)))

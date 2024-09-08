@@ -1,0 +1,41 @@
+setup_01:
+    host: ${{host()}}
+    url: /roles?$cache{test1}_$cache{test2}_$cache{test3}_$cache{test4}
+    method: GET
+    detail: test
+    headers:
+      Content-Type: application/json;
+      Token: $cache{admin_token}
+    # params json file, data
+    requestType: data
+    # empty or True will run
+    is_run:
+    data:
+    dependence_case: True
+    dependence_case_data:
+      - case_id: setup_sql
+        dependent_data:
+          - dependent_type: sqlData
+            jsonpath: $.name
+            set_cache: test1
+          - dependent_type: sqlData
+            jsonpath: $.id
+            set_cache: test2
+      - case_id: setup_func
+        dependent_data:
+          - dependent_type: funcData
+            jsonpath: $.random_int
+            set_cache: test3
+          - dependent_type: funcData
+            jsonpath: $.query_test.id
+            set_cache: test4
+    assert:
+      status_code: 200
+    sql:
+    setup_sql:
+      - select count(*) from user
+      - select * from user
+
+    setup_func:
+      - random_int()
+      - query_test(2)

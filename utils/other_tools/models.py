@@ -57,6 +57,7 @@ class DependentType(Enum):
     REQUEST = 'request'
     SQL_DATA = 'sqlData'
     CACHE = "cache"
+    FUNCTION = 'function'
 
 
 class Assert(BaseModel):
@@ -119,6 +120,7 @@ class TestCase(BaseModel):
     dependence_case_data: Optional[Union[None, List["DependentCaseData"], Text]] = None
     sql: List = None
     setup_sql: List = None
+    setup_func: List = None
     status_code: Optional[int] = None
     teardown_sql: Optional[List] = None
     teardown: Union[List["TearDown"], None] = None
