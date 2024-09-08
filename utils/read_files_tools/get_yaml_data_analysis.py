@@ -55,6 +55,7 @@ class CaseData:
                     "sql": self.get_sql(key, values),
                     "assert_data": self.get_assert(key, values),
                     "setup_sql": self.setup_sql(values),
+                    "setup_func": self.setup_func(values),
                     "teardown": self.tear_down(values),
                     "teardown_sql": self.teardown_sql(values),
                     "sleep": self.time_sleep(values),
@@ -355,6 +356,18 @@ class CaseData:
         """
         try:
             _setup_sql = case_data['setup_sql']
+            return _setup_sql
+        except KeyError:
+            return None
+
+    @classmethod
+    def setup_func(cls, case_data: Dict) -> Union[list, None]:
+        """
+        get setup func
+        :return:
+        """
+        try:
+            _setup_sql = case_data['setup_func']
             return _setup_sql
         except KeyError:
             return None
